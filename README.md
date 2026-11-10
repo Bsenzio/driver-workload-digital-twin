@@ -2,6 +2,8 @@
 
 A browser-based driving simulation for exploring synthetic CAN telemetry, a heuristic estimate of driver demand, and a separate simulated ECU CPU budget.
 
+[Open the live demo](https://bsenzio.github.io/driver-workload-digital-twin/)
+
 ![Highway Cruise in the dashboard during the synthetic diagnostic burst](docs/demo.png)
 
 ## Run locally

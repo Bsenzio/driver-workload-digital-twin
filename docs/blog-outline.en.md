@@ -9,4 +9,4 @@
 
 Figure: [Highway Cruise dashboard during diagnostics](demo.png).
 
-Repository: [Driver Workload Digital Twin](https://github.com/bsenzio/driver-workload-digital-twin). Add the verified GitHub Pages link before publication.
+Repository: [Driver Workload Digital Twin](https://github.com/bsenzio/driver-workload-digital-twin). [Live demo](https://bsenzio.github.io/driver-workload-digital-twin/).
