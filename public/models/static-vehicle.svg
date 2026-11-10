@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <defs>
+    <linearGradient id="bg" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#263641"/><stop offset="1" stop-color="#11171e"/></linearGradient>
+    <linearGradient id="body" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#55b7c0"/><stop offset="1" stop-color="#1d5867"/></linearGradient>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h640v360H0z"/>
+  <path fill="#202731" d="M274 66h92l238 294H34z"/>
+  <path fill="none" stroke="#52636d" stroke-width="2" d="m274 66-240 294M366 66l238 294"/>
+  <path fill="none" stroke="#96a5a6" stroke-dasharray="14 26" stroke-width="2" d="M320 68v292"/>
+  <ellipse cx="319" cy="263" rx="125" ry="18" fill="#121921"/>
+  <path fill="#141b22" d="M223 229h27v37h-27zM391 229h27v37h-27z"/>
+  <path fill="url(#body)" stroke="#67b8c3" d="m218 214 19-22 36-11 22-38h53l22 38 34 11 18 22v26l-14 9H232l-14-9z"/>
+  <path fill="#263c49" d="m282 183 19-32h40l20 32z"/>
+  <path fill="none" stroke="#fe615d" stroke-width="5" d="M235 218h171"/>
+  <path fill="#1b232d" d="M272 231h96v10h-96z"/>
+</svg>
