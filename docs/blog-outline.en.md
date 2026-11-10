@@ -5,6 +5,7 @@
 - **Synthetic CAN design.** Show one signed field in hex, the frame cadences and what the rolling count includes.
 - **Driver estimate and ECU model.** Open with the Highway Cruise diagnostic burst. Explain why frame processing raises the simulated CPU percentage independently of the driver estimate.
 - **Comparing with the script.** Show the obstacle and explain the heuristic and scripted curves' different timing and shared scenario origin.
+- **Cabin context and classifiers.** Show how a scripted driver cue changes when traffic closes in, then compare held-out classifier results with and without per-ID rates. Keep driver cues, ECU costs and CAN profile predictions separate.
 - **Limits and reproducibility.** Cover the absence of hardware and human validation, then download and inspect a telemetry CSV.
 
 Figure: [Highway Cruise dashboard during diagnostics](demo.png).

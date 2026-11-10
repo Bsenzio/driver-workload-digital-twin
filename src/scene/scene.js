@@ -1,8 +1,30 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildCar } from './car.js';
+import { createCabin } from './cabin.js';
+import { driverCue, trafficAt } from '../sim/traffic.js';
 
-export function createVehicleView(container, setStatus) {
+function batchTrack(group) {
+  const batches = new Map();
+  for (const mesh of [...group.children]) {
+    mesh.updateMatrix();
+    const color = mesh.material.color.getHex();
+    if (!batches.has(color)) batches.set(color, { material: mesh.material, meshes: [] });
+    batches.get(color).meshes.push(mesh);
+  }
+  group.clear();
+  for (const { material, meshes } of batches.values()) {
+    const geometries = meshes.map(mesh => mesh.geometry.applyMatrix4(mesh.matrix));
+    group.add(new THREE.Mesh(mergeGeometries(geometries), material));
+    for (const mesh of meshes) {
+      mesh.geometry.dispose();
+      if (mesh.material !== material) mesh.material.dispose();
+    }
+  }
+}
+
+export function createVehicleView(container, cabinFrame, setStatus) {
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let renderer;
   try {
@@ -11,6 +33,10 @@ export function createVehicleView(container, setStatus) {
     setStatus('Static view · WebGL unavailable', 'static');
     return { draw() {}, reset() {} };
   }
+  cabinFrame.dataset.renderer = 'webgl';
+  const cabin = createCabin();
+  const size = new THREE.Vector2();
+  let inset;
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
   renderer.setClearColor('#232e38');
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -20,10 +46,12 @@ export function createVehicleView(container, setStatus) {
   renderer.domElement.addEventListener('webglcontextlost', event => {
     event.preventDefault();
     renderer.domElement.hidden = true;
+    cabinFrame.dataset.renderer = 'static';
     setStatus('Static view · graphics context lost', 'static');
   });
   renderer.domElement.addEventListener('webglcontextrestored', () => {
     renderer.domElement.hidden = false;
+    cabinFrame.dataset.renderer = 'webgl';
     lastPose = undefined;
     setStatus(modelLabel, 'ready');
   });
@@ -66,6 +94,13 @@ export function createVehicleView(container, setStatus) {
       box(markings, '#586968', [2.7, 0.035, 0.05], [side * 9.2, -0.054, z]);
     }
   }
+
+  batchTrack(track);
+  batchTrack(markings);
+
+  const trafficMount = new THREE.Group();
+  const trafficModels = new Map();
+  scene.add(trafficMount);
 
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 7), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false,
@@ -110,15 +145,27 @@ export function createVehicleView(container, setStatus) {
     undefined,
     () => useCar(buildCar(), 'Fallback · procedural vehicle'));
 
-  const resize = new ResizeObserver(([entry]) => {
-    const { width, height } = entry.contentRect;
-    if (!width || !height) return;
+  const resize = new ResizeObserver(() => {
+    const viewport = container.getBoundingClientRect();
+    const frame = cabinFrame.getBoundingClientRect();
+    const width = Math.round(viewport.width);
+    const height = Math.round(viewport.height);
+    if (!width || !height || !frame.height) return;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    inset = {
+      x: Math.round(frame.left - viewport.left),
+      y: Math.round(viewport.bottom - frame.bottom),
+      width: Math.round(frame.width),
+      height: Math.round(frame.height),
+    };
+    cabin.camera.aspect = inset.width / inset.height;
+    cabin.camera.updateProjectionMatrix();
     lastPose = undefined;
   });
   resize.observe(container);
+  resize.observe(cabinFrame);
   const lerp = THREE.MathUtils.lerp;
 
   return {
@@ -147,7 +194,32 @@ export function createVehicleView(container, setStatus) {
       camera.position.set(lane + (narrow ? 3.9 : 5.8) + drift * 0.48, narrow ? 3.65 : 4.15,
         -distance + (narrow ? 8.1 : 8.4));
       camera.lookAt(lane - 0.6 + drift * 0.22, 0.65, -distance - 4.5);
+      const renderTime = lerp(previous.sim_time_ms, current.sim_time_ms, alpha);
+      const actors = trafficAt(scenario.id, renderTime);
+      for (const model of trafficModels.values()) model.visible = false;
+      for (const actor of actors) {
+        if (!trafficModels.has(actor.id)) {
+          const model = buildCar(actor.color);
+          trafficMount.add(model);
+          trafficModels.set(actor.id, model);
+        }
+        const model = trafficModels.get(actor.id);
+        model.visible = true;
+        model.position.set(lane + 5.5 * actor.lane, 0, -distance - actor.gapM);
+        model.rotation.y = actor.oncoming ? Math.PI : 0;
+      }
+      cabin.pose(steer, driverCue(current, trafficAt(scenario.id, current.sim_time_ms)), reducedMotion.matches);
+      renderer.getSize(size);
+      renderer.setViewport(0, 0, size.x, size.y);
+      renderer.setScissorTest(false);
       renderer.render(scene, camera);
+      if (inset) {
+        renderer.setViewport(inset.x, inset.y, inset.width, inset.height);
+        renderer.setScissor(inset.x, inset.y, inset.width, inset.height);
+        renderer.setScissorTest(true);
+        renderer.render(cabin.scene, cabin.camera);
+        renderer.setScissorTest(false);
+      }
     },
   };
 }

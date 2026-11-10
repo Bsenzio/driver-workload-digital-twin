@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 
-export function buildCar() {
+export function buildCar(color = '#2299a6') {
   const car = new THREE.Group();
   car.name = 'Aster prototype';
-  const paint = new THREE.MeshStandardMaterial({ color: '#2299a6', metalness: 0.4, roughness: 0.28 });
+  const paint = new THREE.MeshStandardMaterial({ color, metalness: 0.4, roughness: 0.28 });
   const trim = new THREE.MeshStandardMaterial({ color: '#11191e', roughness: 0.62 });
   const glass = new THREE.MeshStandardMaterial({ color: '#22353f', metalness: 0.63, roughness: 0.17 });
   const alloy = new THREE.MeshStandardMaterial({ color: '#b4c8cb', metalness: 0.65, roughness: 0.32 });

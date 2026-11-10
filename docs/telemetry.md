@@ -22,7 +22,7 @@ Multiply the sum by 100. The first completed step uses the raw value. Later step
 
 **Synthetic reference (unvalidated).** Scenario-specific keyframes define an independent curve through linear interpolation. The scripts for the inputs and reference have a shared origin. Comparison shows how the estimate and reference differ in timing and magnitude for the supplied scripts.
 
-The follow camera interpolates between completed poses, so its pose can trail telemetry by at most one step during playback. The track, vehicle attitude, braking lamps and obstacle position are illustrative rather than physical models.
+The follow camera interpolates between completed poses, so its pose can trail telemetry by at most one step during playback. The track, traffic actors, vehicle attitude, braking lamps and obstacle position are illustrative rather than physical models. The cabin uses scripted response rules for nearby vehicles, steering, braking and recovery. Traffic actors and avatar poses are display data and do not alter the replay telemetry CSV or its CAN cadence.
 
 ## Synthetic CAN
 

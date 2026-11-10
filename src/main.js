@@ -1,4 +1,5 @@
 import './style.css';
+import './extension.css';
 import { createVehicleView } from './scene/scene.js';
 import { CAN, decodeFrame, hexId, hexPayload } from './sim/can.js';
 import { createClock } from './sim/clock.js';
@@ -6,6 +7,9 @@ import { telemetryCsv } from './sim/csv.js';
 import { scenarios } from './sim/scenarios.js';
 import { createSession } from './sim/session.js';
 import { chartGroups, createChart } from './ui/charts.js';
+import { driverCue, trafficAt } from './sim/traffic.js';
+import { downloadCsv } from './ui/download.js';
+import { mountLab } from './ui/lab.js';
 
 const metrics = [
   { id: 'demand', name: 'Driver demand estimate', unit: '/ 100', tag: 'HEURISTIC', accent: 'mint', field: 'driver_demand_index', max: 100 },
@@ -25,7 +29,7 @@ app.innerHTML = `
     <section class="intro" aria-labelledby="title">
       <div class="eyebrow">01 / DRIVING TELEMETRY</div>
       <h1 id="title">Driver Workload <span>Digital Twin</span></h1>
-      <p>Replay scripted drives and trace the signals from vehicle motion to CAN frames, estimated driver demand and simulated ECU load.</p>
+      <p>Replay scripted drives, watch the driver avatar respond to traffic, and experiment with <a href="#classifier-lab">CAN traffic classifiers</a>.</p>
     </section>
     <section class="controls panel" id="controls" aria-label="Playback controls">
       <label class="select-label">Scenario<select id="scenario">${scenarios.map(s => '<option value="' + s.id + '">' + s.name + '</option>').join('')}</select></label>
@@ -46,8 +50,14 @@ app.innerHTML = `
             <img src="${import.meta.env.BASE_URL}models/static-vehicle.svg" alt="">
           </div>
           <div class="scene-top"><span id="model-status" class="model-status" role="status">Loading vehicle…</span><span id="active-event" class="scene-event" role="status" hidden></span></div>
+          <figure id="cabin-frame" class="cabin-frame">
+            <img src="${import.meta.env.BASE_URL}models/static-cabin.svg" alt="">
+            <figcaption><span>CABIN CAM</span><small>SIMULATED</small></figcaption>
+          </figure>
           <div class="scene-data"><div><strong id="speed"></strong><span>KM/H</span></div><div><strong id="brake"></strong><span>BRAKE %</span></div><div><strong id="steer"></strong><span>STEER °</span></div></div>
         </div>
+        <div class="driver-strip"><div><span class="eyebrow">SCRIPTED DRIVER RESPONSE</span><strong id="driver-state"></strong></div>
+          <p><span id="driver-reason"></span><span id="traffic-cue"></span></p></div>
         <footer class="scene-footer"><strong id="scenario-title"></strong><span id="scenario-description"></span></footer>
       </article>
       <aside class="metrics panel" aria-labelledby="metrics-title">
@@ -74,6 +84,7 @@ app.innerHTML = `
         <table><thead><tr><th scope="col">Time (ms)</th><th scope="col">ID</th><th scope="col">DLC</th><th scope="col">Payload (hex)</th><th scope="col">Decoded signals</th></tr></thead><tbody id="frames"></tbody></table>
       </div>
     </section>
+    <section class="panel classifier-lab" id="classifier-lab" aria-labelledby="lab-title"></section>
     <section class="panel method" aria-labelledby="method-title">
       <header class="panel-head"><div><span class="eyebrow">MODEL NOTES</span><h2 id="method-title">How the numbers are made</h2></div></header>
       <div class="method-grid">
@@ -99,7 +110,7 @@ const plots = chartGroups.flatMap(group => {
   });
 });
 
-const vehicle = createVehicleView(el('vehicle'), (label, state) => {
+const vehicle = createVehicleView(el('vehicle'), el('cabin-frame'), (label, state) => {
   el('model-status').textContent = label;
   el('model-status').dataset.state = state;
 });
@@ -108,6 +119,7 @@ let session;
 let previous;
 let lastTick;
 let dirty = true;
+const lab = mountLab(el('classifier-lab'), () => session);
 const clock = createClock(() => {
   previous = session.current;
   session.step();
@@ -151,6 +163,15 @@ function drawTelemetry() {
   const active = session.scenario.events.filter(event => current.event_ids.split('|').includes(event.id));
   text(el('active-event'), active.map(event => event.label).join(' · '));
   el('active-event').hidden = !active.length;
+  const traffic = trafficAt(session.scenario.id, current.sim_time_ms);
+  const cue = driverCue(current, traffic);
+  text(el('driver-state'), cue.state);
+  el('driver-state').dataset.tone = cue.tone;
+  text(el('driver-reason'), cue.reason);
+  const nearest = [...traffic].sort((a, b) => Math.abs(a.gapM) - Math.abs(b.gapM))[0];
+  text(el('traffic-cue'), nearest ? nearest.label + ' · ' + Math.abs(nearest.gapM).toFixed(0) +
+    ' m ' + (nearest.gapM < 0 ? 'behind' : 'ahead') : 'No traffic actor in view');
+  lab.update();
   for (const metric of metricNodes) {
     const value = current[metric.field];
     text(metric.value, value === null ? '—' : value.toFixed(metric.id === 'ecu' ? 0 : 1));
@@ -186,13 +207,7 @@ el('pause').addEventListener('click', () => { clock.pause(); controls(); });
 el('filter').addEventListener('change', renderFrames);
 document.addEventListener('visibilitychange', () => { lastTick = undefined; });
 el('export').addEventListener('click', () => {
-  const csv = telemetryCsv(session.samples);
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = session.scenario.id + '_seed-' + session.initial.seed + '_telemetry.csv';
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadCsv(telemetryCsv(session.samples), session.scenario.id + '_seed-' + session.initial.seed + '_telemetry.csv');
 });
 
 function tick(now) {

@@ -1,6 +1,6 @@
 import { referenceAt } from './scenarios.js';
 import { initialSignals, nextSignals, seededRandom } from './signals.js';
-import { emitFrames } from './can.js';
+import { CAN, emitFrames } from './can.js';
 import { driverDemand } from './demand.js';
 import { ecuUtilization } from './cpu.js';
 
@@ -27,6 +27,11 @@ export function createSession(scenario, { seed = DEFAULT_SEED, demandModel, diag
     scenario, initial, samples, recentFrames,
     get current() { return current; },
     get complete() { return current.sim_time_ms >= scenario.duration; },
+    canWindowCounts() {
+      const counts = new Map(CAN.map(message => [message.id, 0]));
+      for (const frame of rateWindow) counts.set(frame.id, counts.get(frame.id) + 1);
+      return Object.fromEntries(CAN.map(message => [message.key, counts.get(message.id)]));
+    },
     step() {
       if (this.complete) return current;
       const start = current.sim_time_ms;
