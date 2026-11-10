@@ -8,6 +8,7 @@ import { scenarios } from './sim/scenarios.js';
 import { createSession } from './sim/session.js';
 import { chartGroups, createChart } from './ui/charts.js';
 import { driverCue, trafficAt } from './sim/traffic.js';
+import { cityContext, cityDriverCue } from './sim/city.js';
 import { downloadCsv } from './ui/download.js';
 import { mountLab } from './ui/lab.js';
 
@@ -47,9 +48,12 @@ app.innerHTML = `
         <header class="panel-head"><div><span class="eyebrow">LIVE VIEW</span><h2>Vehicle playback</h2></div><span class="status" id="play-status" role="status"></span></header>
         <div class="viewport">
           <div id="vehicle" class="vehicle" role="img" aria-label="Follow-camera view of a generic prototype vehicle">
-            <img src="${import.meta.env.BASE_URL}models/static-vehicle.svg" alt="">
+            <img id="scene-fallback" src="${import.meta.env.BASE_URL}models/static-vehicle.svg" alt="">
           </div>
           <div class="scene-top"><span id="model-status" class="model-status" role="status">Loading vehicle…</span><span id="active-event" class="scene-event" role="status" hidden></span></div>
+          <div id="city-signal" class="city-signal" hidden>
+            <i aria-hidden="true"></i><div><strong id="city-phase"></strong><span id="city-junction"></span></div>
+          </div>
           <figure id="cabin-frame" class="cabin-frame">
             <img src="${import.meta.env.BASE_URL}models/static-cabin.svg" alt="">
             <figcaption><span>CABIN CAM</span><small>SIMULATED</small></figcaption>
@@ -164,13 +168,26 @@ function drawTelemetry() {
   text(el('active-event'), active.map(event => event.label).join(' · '));
   el('active-event').hidden = !active.length;
   const traffic = trafficAt(session.scenario.id, current.sim_time_ms);
-  const cue = driverCue(current, traffic);
+  const junction = cityContext(session.scenario, current);
+  const cue = cityDriverCue(junction, current) ?? driverCue(current, traffic);
+  el('city-signal').hidden = !junction;
+  if (junction) {
+    el('city-signal').dataset.phase = junction.phase;
+    text(el('city-phase'), junction.phase.toUpperCase() + ' SIGNAL');
+    text(el('city-junction'), junction.name + ' · ' + (junction.gap > 0 ? Math.round(junction.gap) + ' m ahead' : 'crossing'));
+  }
   text(el('driver-state'), cue.state);
   el('driver-state').dataset.tone = cue.tone;
   text(el('driver-reason'), cue.reason);
   const nearest = [...traffic].sort((a, b) => Math.abs(a.gapM) - Math.abs(b.gapM))[0];
-  text(el('traffic-cue'), nearest ? nearest.label + ' · ' + Math.abs(nearest.gapM).toFixed(0) +
-    ' m ' + (nearest.gapM < 0 ? 'behind' : 'ahead') : 'No traffic actor in view');
+  if (session.scenario.junctions) {
+    const crossing = junction?.crossingCount ?? 0;
+    const crossTraffic = crossing === 1 ? '1 vehicle crossing' : crossing + ' vehicles crossing';
+    text(el('traffic-cue'), crossing ? crossTraffic : 'Signalized city corridor');
+  } else {
+    text(el('traffic-cue'), nearest ? nearest.label + ' · ' + Math.abs(nearest.gapM).toFixed(0) +
+      ' m ' + (nearest.gapM < 0 ? 'behind' : 'ahead') : 'No traffic actor in view');
+  }
   lab.update();
   for (const metric of metricNodes) {
     const value = current[metric.field];
@@ -186,6 +203,9 @@ function reset() {
   clock.reset();
   const scenario = scenarios.find(item => item.id === el('scenario').value);
   session = createSession(scenario);
+  const fallback = scenario.junctions ? 'static-city.svg' : 'static-vehicle.svg';
+  const asset = import.meta.env.BASE_URL + 'models/' + fallback;
+  if (el('scene-fallback').getAttribute('src') !== asset) el('scene-fallback').src = asset;
   previous = session.initial;
   lastTick = undefined;
   el('filter').value = '';
@@ -221,5 +241,7 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 
+const requestedScenario = new URLSearchParams(location.search).get('scenario');
+if (scenarios.some(scenario => scenario.id === requestedScenario)) el('scenario').value = requestedScenario;
 reset();
 requestAnimationFrame(tick);

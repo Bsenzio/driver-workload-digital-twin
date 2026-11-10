@@ -20,19 +20,26 @@ npm run preview
 
 Open the project URL printed by Vite. The production project base is `/driver-workload-digital-twin/`.
 
-## Three drives, one simulation clock
+## Four drives, one simulation clock
 
 | Scenario | Duration | What to watch |
 | --- | --- | --- |
 | **Highway Cruise** | 36 s | From 12–17 s, diagnostic frames raise modeled ECU utilization from about 15–16% to 65–66%, while cruise and the driver estimate stay steady. |
 | **Urban Stop-and-Go** | 40 s | Two stops and a right turn shift the braking and steering inputs. |
 | **Sudden Hazard** | 34 s | A barricade appears at 12 s. Compare the elevation and recovery of the estimated and reference curves. |
+| **City Intersections** | 44 s | Stop at Market Street and Civic Avenue while cars cross in both directions. Watch the signals, stop lines and cabin response. |
+
+[Open City Intersections directly](https://bsenzio.github.io/driver-workload-digital-twin/?scenario=city-intersections) and press **Play**.
+
+![The simulated car waiting at a red signal while cross traffic passes at Market Street](docs/city.png)
 
 Choose a scenario and play at 0.5×, 1× or 2×. Pause to inspect the newest CAN frames, filter by ID, and download the captured CSV. Reset or change scenario to start a new session. Each replay with the same scenario, schema version and seed produces the same samples and frame bytes across playback rates.
 
 ## Cabin camera and scripted traffic
 
-The cabin inset shows a procedural driver avatar from the passenger side. A passing vehicle, an urban lead car and oncoming traffic, and a vehicle alongside the obstacle scene give the avatar context. Its posture follows rules for nearby traffic, steering, braking and recovery. The status strip names the rule and its trigger. These are scripted responses. The prototype uses no camera feed, gaze tracking, or human measurements.
+The cabin inset shows a procedural driver avatar from the passenger side. A passing vehicle, an urban lead car and oncoming traffic, a vehicle alongside the obstacle scene, and two signalized intersections give the avatar context. Its posture follows rules for nearby traffic, steering, braking and recovery. The status strip names the rule and its trigger. These are scripted responses. The prototype uses no camera feed, gaze tracking, or human measurements.
+
+In **City Intersections**, the signals, traffic lanes and avatar share the simulation clock. The car waits before each crosswalk. Opposing traffic also waits on the main road while vehicles traverse the cross street. The CSV records the amber, red and green events in its existing `event_ids` column.
 
 ## CAN traffic classifier lab
 

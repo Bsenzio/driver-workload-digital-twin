@@ -87,3 +87,22 @@
   .classifier-lab > .panel-head { align-items: flex-start; }
   .classifier-lab > .panel-head .status { max-width: 85px; }
 }
+
+.city-signal {
+  position: absolute; inset: auto 12px 11px auto; z-index: 2;
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid #526371; border-radius: 6px;
+  background: #121a21ed; padding: 7px 9px; color: var(--fg);
+}
+.city-signal i { width: 9px; height: 9px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 8px var(--signal); }
+.city-signal div { display: grid; gap: 3px; }
+.city-signal strong { color: var(--signal); font: 700 0.67rem var(--mono); }
+.city-signal span { color: #c8d4dd; font: 0.61rem var(--mono); }
+.city-signal[data-phase="red"] { --signal: #ff9e90; }
+.city-signal[data-phase="amber"] { --signal: var(--amber); }
+.city-signal[data-phase="green"] { --signal: var(--mint); }
+@media (max-width: 420px) {
+  .city-signal { inset-inline-end: 8px; gap: 5px; padding-inline: 6px; }
+  .city-signal span { font-size: 0.54rem; }
+  .viewport:has(.city-signal:not([hidden])) .scene-data { gap: 8px; padding-inline: 8px; }
+}

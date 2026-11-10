@@ -3,6 +3,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildCar } from './car.js';
 import { createCabin } from './cabin.js';
+import { createCity } from './city.js';
+import { cityContext, cityDriverCue, cityTrafficAt } from '../sim/city.js';
 import { driverCue, trafficAt } from '../sim/traffic.js';
 
 function batchTrack(group) {
@@ -129,6 +131,7 @@ export function createVehicleView(container, cabinFrame, setStatus) {
   let rearLight;
   let obstacleAt = null;
   let lastPose;
+  let city;
   let modelLabel = 'Loading local GLB…';
   setStatus(modelLabel, 'loading');
   function useCar(model, label) {
@@ -177,7 +180,14 @@ export function createVehicleView(container, cabinFrame, setStatus) {
       lastPose = { current, alpha, reduced: reducedMotion.matches };
       const distance = lerp(previous.distance_m, current.distance_m, alpha);
       const steer = lerp(previous.steer_deg, current.steer_deg, alpha);
-      const lane = scenario.id === 'urban-stop-and-go' ? 2.65 : 2.9;
+      const inCity = Boolean(scenario.junctions);
+      if (inCity && !city) {
+        city = createCity(scenario.junctions);
+        scene.add(city.root);
+      }
+      if (city) city.root.visible = inCity;
+      track.visible = markings.visible = !inCity;
+      const lane = inCity ? 2.6 : scenario.id === 'urban-stop-and-go' ? 2.65 : 2.9;
       const lateral = lane + Math.sin(steer / 92) * 0.95;
       mount.position.set(lateral, 0, -distance);
       mount.rotation.y = -steer * Math.PI / 180 * 0.40;
@@ -191,11 +201,17 @@ export function createVehicleView(container, cabinFrame, setStatus) {
       obstacle.position.set(lane, 0, -obstacleAt);
       const drift = reducedMotion.matches ? 0 : lateral - lane;
       const narrow = camera.aspect < 1.25;
-      camera.position.set(lane + (narrow ? 3.9 : 5.8) + drift * 0.48, narrow ? 3.65 : 4.15,
-        -distance + (narrow ? 8.1 : 8.4));
-      camera.lookAt(lane - 0.6 + drift * 0.22, 0.65, -distance - 4.5);
+      if (inCity) {
+        camera.position.set(narrow ? 6.0 : 7.8, narrow ? 5.1 : 5.6, -distance + 9.1);
+        camera.lookAt(narrow ? 1.9 : 1.2, 0.90, -distance - 6.7);
+        city.update(current.sim_time_ms);
+      } else {
+        camera.position.set(lane + (narrow ? 3.9 : 5.8) + drift * 0.48, narrow ? 3.65 : 4.15,
+          -distance + (narrow ? 8.1 : 8.4));
+        camera.lookAt(lane - 0.6 + drift * 0.22, 0.65, -distance - 4.5);
+      }
       const renderTime = lerp(previous.sim_time_ms, current.sim_time_ms, alpha);
-      const actors = trafficAt(scenario.id, renderTime);
+      const actors = inCity ? cityTrafficAt(scenario, renderTime, distance) : trafficAt(scenario.id, renderTime);
       for (const model of trafficModels.values()) model.visible = false;
       for (const actor of actors) {
         if (!trafficModels.has(actor.id)) {
@@ -205,10 +221,12 @@ export function createVehicleView(container, cabinFrame, setStatus) {
         }
         const model = trafficModels.get(actor.id);
         model.visible = true;
-        model.position.set(lane + 5.5 * actor.lane, 0, -distance - actor.gapM);
-        model.rotation.y = actor.oncoming ? Math.PI : 0;
+        model.position.set(actor.x ?? lane + 5.5 * actor.lane, 0, actor.z ?? -distance - actor.gapM);
+        model.rotation.y = actor.heading ?? (actor.oncoming ? Math.PI : 0);
       }
-      cabin.pose(steer, driverCue(current, trafficAt(scenario.id, current.sim_time_ms)), reducedMotion.matches);
+      const context = cityContext(scenario, current);
+      const cue = cityDriverCue(context, current) ?? driverCue(current, trafficAt(scenario.id, current.sim_time_ms));
+      cabin.pose(steer, cue, reducedMotion.matches);
       renderer.getSize(size);
       renderer.setViewport(0, 0, size.x, size.y);
       renderer.setScissorTest(false);

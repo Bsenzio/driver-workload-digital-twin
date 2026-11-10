@@ -17,6 +17,9 @@ export const GROUPS = [
   { id: 'signals', name: 'Driving signals', fields: ['speed_kmh', 'brake_pct', 'steer_deg', 'long_accel_mps2', 'hazard_active'] },
 ];
 export const BASELINE = { motion_fps: 10, pedal_fps: 10, hazard_fps: 5, diagnostic_fps: 0 };
+// Keep the original labeled experiment reproducible as the replay catalog grows.
+const trainingScenarios = ['highway-cruise', 'urban-stop-and-go', 'sudden-hazard']
+  .map(id => scenarios.find(scenario => scenario.id === id));
 const FEATURE_FIELDS = GROUPS.flatMap(group => group.fields);
 const COLUMNS = ['episode_id', 'split', 'scenario_id', 'seed', 'sim_time_ms', 'scripted_source', ...FEATURE_FIELDS];
 const bounds = {
@@ -44,7 +47,7 @@ export function generateDataset(seed = 42) {
   for (const source of SOURCES) {
     for (let episode = 0; episode < 12; episode++) {
       const split = episode < 8 ? 'train' : 'test';
-      const scenario = scenarios[episode % scenarios.length];
+      const scenario = trainingScenarios[episode % trainingScenarios.length];
       const sessionSeed = Math.floor(random() * 2 ** 32);
       const session = createSession(scenario, { seed: sessionSeed, diagnostics: false });
       const offset = Math.floor(random() * 24);

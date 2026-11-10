@@ -6,6 +6,9 @@
 | `public/models/static-vehicle.svg` | Original vector illustration for the static fallback. |
 | `docs/demo.png` | Screenshot of the running production build at the Highway Cruise diagnostic burst. |
 | `public/models/static-cabin.svg` | Original vector illustration for the static cabin fallback. |
+| `public/models/static-city.svg` | Original city illustration for the WebGL fallback. |
+| `docs/city.png` | Screenshot of the live 3D city at the first red signal. |
+| City blocks and signals | Original procedural buildings, road markings, streetlights and signal housings in `src/scene/city.js`. Repeated geometry uses instanced rendering. |
 | `docs/can-lab.png` | Screenshot of the three fitted models and a diagnostics probe. |
 | Road, markers, barricade and lights | Original primitives and materials in `src/scene/scene.js`. |
 | Cabin, avatar and traffic vehicles | Original procedural geometry in `src/scene/cabin.js` and color variants of the project car. Both cameras share one WebGL renderer. |

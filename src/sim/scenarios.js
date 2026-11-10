@@ -1,5 +1,10 @@
 const event = (id, label, start, end) => ({ id, label, start, end });
 
+const cityJunctions = [
+  { name: 'Market Street', distance: 70, amber: 4500, red: 5500, green: 14500 },
+  { name: 'Civic Avenue', distance: 176, amber: 26200, red: 27200, green: 36500 },
+];
+
 export const scenarios = [
   {
     id: 'highway-cruise', name: 'Highway Cruise', duration: 36_000, initialSpeed: 104,
@@ -30,6 +35,22 @@ export const scenarios = [
     events: [event('obstacle', 'Obstacle ahead', 12_000, 15_200), event('recovery', 'Recovery', 19_000, 30_000)],
     reference: [[0, 9], [11.7, 9], [12.2, 91], [13.2, 84], [15.6, 64], [18, 35],
       [21, 21], [26, 12], [34, 9]],
+  },
+  {
+    id: 'city-intersections', name: 'City Intersections', duration: 44_000, initialSpeed: 32.4,
+    description: 'Stop at Market Street and Civic Avenue while cross traffic moves through two signalized intersections.',
+    junctions: cityJunctions,
+    acceleration: [[0, 0], [4.5, 0], [5.5, -2.8], [8.5, -2.8], [9.5, -0.45], [14.5, -0.45], [15, 0],
+      [15.7, 2.15], [19.4, 2.15], [20.4, 0], [26.2, 0], [27.2, -2.9], [29.7, -2.9],
+      [30.7, -0.45], [36.5, -0.45], [37, 0], [37.7, 2], [41.3, 2], [42.3, 0], [44, 0]],
+    steering: [[0, 0], [7, 1], [16, 0], [24, -1.1], [33, 0], [44, 0]],
+    events: cityJunctions.flatMap((junction, index) => [
+      event('city-amber-' + index, junction.name + ' · amber', junction.amber, junction.red),
+      event('city-red-' + index, junction.name + ' · red', junction.red, junction.green),
+      event('city-green-' + index, junction.name + ' · green', junction.green, junction.green + 4200),
+    ]),
+    reference: [[0, 10], [4, 13], [6.5, 41], [9, 26], [13, 22], [15, 28], [20, 14],
+      [26, 17], [28, 43], [31, 26], [35, 23], [37, 29], [42, 13], [44, 10]],
   },
 ];
 

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <defs>
+    <pattern id="windows" width="21" height="21" patternUnits="userSpaceOnUse">
+      <path d="M3 3h12v13H3z" fill="#253f50"/>
+      <path d="M3 15h12v2H3z" fill="#788c93"/>
+    </pattern>
+    <pattern id="crosswalk" width="20" height="18" patternUnits="userSpaceOnUse">
+      <path d="M0 0h10v18H0z" fill="#b0c2c4"/>
+    </pattern>
+  </defs>
+  <path fill="#293b48" d="M0 0h640v360H0z"/>
+  <path fill="#51616b" d="M0 202h640v158H0z"/>
+  <path fill="#6e8390" d="M16 43h105v171H16zM129 86h70v108h-70zM494 70h116v151H494zM416 91h71v112h-71z"/>
+  <path fill="#927e73" d="M212 109h60v84h-60zM363 93h45v103h-45z"/>
+  <path fill="url(#windows)" d="M20 51h94v154H20zM136 93h59v100h-59zM218 115h47v77h-47zM369 99h33v93h-33zM424 99h58v98h-58zM502 79h98v137h-98z"/>
+  <path fill="#333c46" d="M296 169h48l158 191H138zM0 230h640v61H0z"/>
+  <path fill="none" stroke="#9aabac" stroke-width="2" stroke-dasharray="10 9" d="M320 170v58m0 66v66M0 261h239m163 0h238"/>
+  <path fill="url(#crosswalk)" d="M220 291h200v11H220zM278 216h84v10h-84z"/>
+  <path stroke="#9daab0" stroke-width="6" fill="none" d="M427 302v-99h-62"/>
+  <rect x="348" y="191" width="23" height="53" rx="4" fill="#19232d"/>
+  <circle cx="359.5" cy="201" r="5" fill="#ff665b"/>
+  <circle cx="359.5" cy="217" r="5" fill="#574a2e"/>
+  <circle cx="359.5" cy="233" r="5" fill="#294438"/>
+  <path fill="#c1925a" d="m57 256 18-11h52l22 11v17H57z"/>
+  <path fill="#9c7eb2" d="m465 273 18-13h46l25 12v14h-89z"/>
+  <path fill="#4babb7" d="m297 313 16-22h38l17 22 11 8v17h-94v-17z"/>
+  <path fill="#233e4c" d="m312 312 7-15h28l9 15z"/>
+  <path stroke="#ff685d" stroke-width="3" d="M294 328h76"/>
+</svg>
