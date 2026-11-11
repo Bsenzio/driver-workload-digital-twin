@@ -1,6 +1,13 @@
 import { interpolate } from './scenarios.js';
 
 const traffic = {
+  'vehicle-cut-in': [
+    { id: 'merging', label: 'Vehicle merging from the left', start: 4000, end: 38001,
+      lane: -1, lanePath: [[4, -1], [8, -1], [10.5, 0], [38, 0]],
+      gap: [[4, -18], [8, -3], [10.5, 9], [14, 16], [22, 24], [38, 36]], color: '#e3aa65' },
+    { id: 'distant', label: 'Distant lead vehicle', start: 0, end: 38001, lane: 0,
+      gap: [[0, 74], [10, 80], [20, 100], [38, 125]], color: '#a9b6cb' },
+  ],
   'highway-cruise': [
     { id: 'pass', label: 'Vehicle passing on the left', start: 4_000, end: 24_000, lane: -1,
       gap: [[4, -25], [10, -8], [14, 8], [24, 46]], color: '#d1a052' },
@@ -20,7 +27,8 @@ const traffic = {
 export function trafficAt(scenarioId, timeMs) {
   return (traffic[scenarioId] ?? [])
     .filter(actor => timeMs >= actor.start && timeMs < actor.end)
-    .map(actor => ({ ...actor, gapM: interpolate(actor.gap, timeMs / 1000) }));
+    .map(actor => ({ ...actor, lane: actor.lanePath ? interpolate(actor.lanePath, timeMs / 1000) : actor.lane,
+      gapM: interpolate(actor.gap, timeMs / 1000) }));
 }
 
 export function driverCue(sample, actors) {

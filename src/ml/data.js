@@ -34,6 +34,13 @@ export function observedFeatures(session) {
   const counts = session.canWindowCounts();
   for (const key of FRAME_KEYS) features[key + '_fps'] = counts[key] / denominator;
   for (const field of GROUPS[2].fields) features[field] = sample[field];
+  const sensed = session.sensors?.readings;
+  if (sensed) {
+    features.speed_kmh = sensed.wheels?.values.front_left_kmh ?? features.speed_kmh;
+    features.brake_pct = sensed.pedals?.values.brake_pct ?? features.brake_pct;
+    features.steer_deg = sensed.steering?.values.steer_deg ?? features.steer_deg;
+    features.long_accel_mps2 = sensed.imu?.values.long_accel_mps2 ?? features.long_accel_mps2;
+  }
   return addTotal(features);
 }
 

@@ -18,8 +18,35 @@ export const CAN = [
   ] },
 ];
 
+export const SENSOR_CAN = [
+  { id: 0x123, sensorId: 'pressure', name: 'Brake pressure', dlc: 2, fields: [
+    { key: 'pressure_bar', label: 'Pressure', offset: 0, type: 'Uint16', scale: 0.01, unit: 'bar' },
+  ] },
+  { id: 0x124, sensorId: 'radar', name: 'Radar perception', dlc: 5, fields: [
+    { key: 'range_m', label: 'Range', offset: 0, type: 'Uint16', scale: 0.01, unit: 'm' },
+    { key: 'relative_mps', label: 'Relative speed', offset: 2, type: 'Int16', scale: 0.01, unit: 'm/s' },
+    { key: 'target_count', label: 'Targets', offset: 4, type: 'Uint8', scale: 1 },
+  ] },
+  { id: 0x125, sensorId: 'camera', name: 'Camera perception', dlc: 3, fields: [
+    { key: 'range_m', label: 'Range', offset: 0, type: 'Uint16', scale: 0.01, unit: 'm' },
+    { key: 'target_count', label: 'Targets', offset: 2, type: 'Uint8', scale: 1 },
+  ] },
+  { id: 0x126, sensorId: 'wheels', name: 'Wheel speeds', dlc: 8, fields: [
+    { key: 'front_left_kmh', label: 'FL', offset: 0, type: 'Uint16', scale: 0.01, unit: 'km/h' },
+    { key: 'front_right_kmh', label: 'FR', offset: 2, type: 'Uint16', scale: 0.01, unit: 'km/h' },
+    { key: 'rear_left_kmh', label: 'RL', offset: 4, type: 'Uint16', scale: 0.01, unit: 'km/h' },
+    { key: 'rear_right_kmh', label: 'RR', offset: 6, type: 'Uint16', scale: 0.01, unit: 'km/h' },
+  ] },
+  { id: 0x127, sensorId: 'imu', name: 'Inertial signals', dlc: 6, fields: [
+    { key: 'long_accel_mps2', label: 'Long. acceleration', offset: 0, type: 'Int16', scale: 0.01, unit: 'm/s²' },
+    { key: 'lateral_accel_mps2', label: 'Lateral acceleration', offset: 2, type: 'Int16', scale: 0.01, unit: 'm/s²' },
+    { key: 'yaw_rate_deg_s', label: 'Yaw rate', offset: 4, type: 'Int16', scale: 0.01, unit: '°/s' },
+  ] },
+];
+export const ALL_CAN = [...CAN, ...SENSOR_CAN];
+
 const integerRanges = { Uint8: [0, 255], Uint16: [0, 65535], Int16: [-32768, 32767] };
-const byId = new Map(CAN.map(message => [message.id, message]));
+const byId = new Map(ALL_CAN.map(message => [message.id, message]));
 
 export function encodeFrame(id, timeMs, values) {
   const message = byId.get(id);

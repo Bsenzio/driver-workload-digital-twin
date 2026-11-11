@@ -23,7 +23,7 @@ export function mountLab(host, getSession) {
       <div><span class="eyebrow">02 / SYNTHETIC ML EXPERIMENT</span><h2 id="lab-title">CAN traffic classifier lab</h2></div>
       <span class="status">Runs in this browser</span>
     </header>
-    <p class="lab-intro">Train three classifiers to identify the scripted source of extra CAN frames. Try removing the CAN IDs to see how much the models can infer from total traffic and driving signals alone.</p>
+    <p class="lab-intro">Train three classifiers to identify the scripted source of extra frames among the original four CAN IDs (0x120, 0x121, 0x122, 0x7A0). Try removing the CAN IDs to see how much the models can infer from total traffic and driving signals alone.</p>
     <div class="lab-columns">
       <section class="lab-card" aria-labelledby="dataset-title">
         <h3 id="dataset-title">1 · Training data</h3>

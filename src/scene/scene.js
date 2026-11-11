@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildCar } from './car.js';
 import { createCabin } from './cabin.js';
+import { createSensorOverlay } from './sensors.js';
 import { createCity } from './city.js';
 import { cityContext, cityDriverCue, cityTrafficAt } from '../sim/city.js';
 import { driverCue, trafficAt } from '../sim/traffic.js';
@@ -26,7 +27,7 @@ function batchTrack(group) {
   }
 }
 
-export function createVehicleView(container, cabinFrame, setStatus) {
+export function createVehicleView(container, cabinFrame, setStatus, onSensorSelect) {
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let renderer;
   try {
@@ -127,6 +128,16 @@ export function createVehicleView(container, cabinFrame, setStatus) {
 
   const mount = new THREE.Group();
   scene.add(mount);
+  const sensorOverlay = createSensorOverlay(mount, scene);
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  renderer.domElement.addEventListener('pointerdown', event => {
+    const bounds = renderer.domElement.getBoundingClientRect();
+    pointer.set((event.clientX - bounds.left) / bounds.width * 2 - 1, -(event.clientY - bounds.top) / bounds.height * 2 + 1);
+    raycaster.setFromCamera(pointer, camera);
+    const id = sensorOverlay.pick(raycaster);
+    if (id) onSensorSelect?.(id);
+  });
   let car;
   let rearLight;
   let obstacleAt = null;
@@ -173,11 +184,12 @@ export function createVehicleView(container, cabinFrame, setStatus) {
 
   return {
     reset() { obstacleAt = null; lastPose = undefined; },
-    draw(previous, current, alpha, scenario) {
+    draw(previous, current, alpha, scenario, sensorView) {
       if (renderer.domElement.hidden) return;
+      const sensorKey = sensorView ? sensorView.id + '/' + sensorView.show : '';
       if (lastPose?.current === current && lastPose.alpha === alpha &&
-          lastPose.reduced === reducedMotion.matches) return;
-      lastPose = { current, alpha, reduced: reducedMotion.matches };
+          lastPose.reduced === reducedMotion.matches && lastPose.sensorKey === sensorKey) return;
+      lastPose = { current, alpha, reduced: reducedMotion.matches, sensorKey };
       const distance = lerp(previous.distance_m, current.distance_m, alpha);
       const steer = lerp(previous.steer_deg, current.steer_deg, alpha);
       const inCity = Boolean(scenario.junctions);
@@ -227,6 +239,7 @@ export function createVehicleView(container, cabinFrame, setStatus) {
       const context = cityContext(scenario, current);
       const cue = cityDriverCue(context, current) ?? driverCue(current, trafficAt(scenario.id, current.sim_time_ms));
       cabin.pose(steer, cue, reducedMotion.matches);
+      sensorOverlay.update(sensorView, lateral, distance);
       renderer.getSize(size);
       renderer.setViewport(0, 0, size.x, size.y);
       renderer.setScissorTest(false);

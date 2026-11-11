@@ -1,28 +1,26 @@
 import { SOURCES } from './data.js';
 
-const classes = SOURCES.map(source => source.id);
-const classIndex = label => classes.indexOf(label);
 const average = values => values.reduce((sum, value) => sum + value, 0) / values.length;
 const strongest = scores => scores.indexOf(Math.max(...scores));
 
-function votes(rows) {
-  const counts = Array(classes.length).fill(0);
+function votes(rows, classCount) {
+  const counts = Array(classCount).fill(0);
   for (const row of rows) counts[row.label]++;
   return counts;
 }
 
-function nearestNeighbors(train) {
+function nearestNeighbors(train, classCount) {
   return vector => {
     const nearest = train.map(row => ({
       label: row.label,
       distance: row.vector.reduce((sum, value, feature) => sum + (value - vector[feature]) ** 2, 0),
     })).sort((a, b) => a.distance - b.distance).slice(0, 7);
-    return strongest(votes(nearest));
+    return strongest(votes(nearest, classCount));
   };
 }
 
-function naiveBayes(train) {
-  const stats = classes.map((_, label) => {
+function naiveBayes(train, classCount) {
+  const stats = Array.from({ length: classCount }, (_, label) => {
     const rows = train.filter(row => row.label === label);
     return {
       prior: Math.log(rows.length / train.length),
@@ -43,9 +41,9 @@ function impurity(counts, total) {
   return 1 - counts.reduce((sum, count) => sum + (count / total) ** 2, 0);
 }
 
-function decisionTree(train) {
+function decisionTree(train, classCount) {
   function grow(rows, depth) {
-    const counts = votes(rows);
+    const counts = votes(rows, classCount);
     const label = strongest(counts);
     if (depth === 6 || rows.length < 8 || counts[label] === rows.length) return () => label;
     let best;
@@ -81,7 +79,9 @@ const algorithms = [
   { id: 'knn', name: '7-nearest neighbors', description: 'Votes from similar training windows', fit: nearestNeighbors },
 ];
 
-export function trainClassifiers(rows, fields) {
+export function trainClassifiers(rows, fields, { labels = SOURCES.map(source => source.id), labelField = 'scripted_source' } = {}) {
+  const classes = labels;
+  const classIndex = label => classes.indexOf(label);
   const train = rows.filter(row => row.split === 'train');
   const test = rows.filter(row => row.split === 'test');
   const scalers = fields.map(field => {
@@ -91,11 +91,11 @@ export function trainClassifiers(rows, fields) {
     return { mean, scale };
   });
   const vector = row => fields.map((field, index) => (row[field] - scalers[index].mean) / scalers[index].scale);
-  const training = train.map(row => ({ label: classIndex(row.scripted_source), vector: vector(row) }));
+  const training = train.map(row => ({ label: classIndex(row[labelField]), vector: vector(row) }));
   return algorithms.map(({ fit, ...metadata }) => {
-    const classify = fit(training);
+    const classify = fit(training, classes.length);
     const confusion = classes.map(() => classes.map(() => 0));
-    for (const row of test) confusion[classIndex(row.scripted_source)][classify(vector(row))]++;
+    for (const row of test) confusion[classIndex(row[labelField])][classify(vector(row))]++;
     const accuracy = confusion.reduce((sum, counts, index) => sum + counts[index], 0) / test.length;
     const balanced = average(confusion.map((counts, index) => counts[index] / counts.reduce((a, b) => a + b, 0)));
     return { ...metadata, accuracy, balanced, confusion, predict: row => classes[classify(vector(row))] };

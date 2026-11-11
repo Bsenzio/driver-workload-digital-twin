@@ -22,7 +22,7 @@ export const chartGroups = [
   ],
   [
     { title: 'ECU utilization', unit: '%', max: 100, lines: [{ field: 'ecu_cpu_sim_pct', color: 'violet' }] },
-    { title: 'CAN activity', unit: 'frames/s', max: 80, lines: [{ field: 'can_frames_per_s', color: 'cyan' }] },
+    { title: 'CAN activity', unit: 'frames/s', max: 160, lines: [{ field: 'can_frames_per_s', color: 'cyan' }] },
   ],
 ];
 

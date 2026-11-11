@@ -52,6 +52,17 @@ export const scenarios = [
     reference: [[0, 10], [4, 13], [6.5, 41], [9, 26], [13, 22], [15, 28], [20, 14],
       [26, 17], [28, 43], [31, 26], [35, 23], [37, 29], [42, 13], [44, 10]],
   },
+  {
+    id: 'vehicle-cut-in', name: 'Vehicle Cut-In', duration: 38_000, initialSpeed: 68,
+    description: 'A vehicle approaches from the left, merges ahead, and prompts a scripted slowdown. Compare sensing and signal quality.',
+    acceleration: [[0, 0], [9, 0], [10, -2.7], [13.5, -2.7], [15, 0], [20, 0], [21, 1.5], [27, 1.5], [29, 0], [38, 0]],
+    steering: [[0, 0], [8, 0], [10, 2], [13, -1], [18, 0], [38, 0]],
+    events: [event('vehicle-approach', 'Vehicle alongside', 4000, 8000),
+      event('cut-in', 'Vehicle merges ahead', 8000, 11000),
+      event('following', 'Following merged vehicle', 11000, 20000),
+      event('recovery', 'Recovery', 20000, 29000)],
+    reference: [[0, 9], [7, 13], [9, 42], [10.5, 62], [13.5, 51], [17, 28], [22, 19], [30, 10], [38, 9]],
+  },
 ];
 
 export function interpolate(points, time) {

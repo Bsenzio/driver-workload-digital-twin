@@ -9,7 +9,9 @@
 | `public/models/static-city.svg` | Original city illustration for the WebGL fallback. |
 | `docs/city.png` | Screenshot of the live 3D city at the first red signal. |
 | City blocks and signals | Original procedural buildings, road markings, streetlights and signal housings in `src/scene/city.js`. Repeated geometry uses instanced rendering. |
-| `docs/can-lab.png` | Screenshot of the three fitted models and a diagnostics probe. |
+| `docs/can-lab.png` | Screenshot of the three fitted traffic-profile models and a diagnostics probe. |
+| `docs/cut-in.png`, `docs/sensors.png` | Screenshots of the cut-in and the sensor instrumentation panel. |
+| Sensor overlay and schematic | Original marker, sector and target geometry in `src/scene/sensors.js` and the inline vehicle schematic in `src/ui/sensors.js`. |
 | Road, markers, barricade and lights | Original primitives and materials in `src/scene/scene.js`. |
 | Cabin, avatar and traffic vehicles | Original procedural geometry in `src/scene/cabin.js` and color variants of the project car. Both cameras share one WebGL renderer. |
 

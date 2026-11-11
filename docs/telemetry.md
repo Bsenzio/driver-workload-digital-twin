@@ -18,7 +18,7 @@ The script interpolates acceleration and steering profiles and adds small seeded
 
 Multiply the sum by 100. The first completed step uses the raw value. Later steps use 0.30 × raw + 0.70 × previous index. At 0 ms the initial display uses the raw initial state. The weights and thresholds are illustrative.
 
-**Simulated ECU CPU utilization.** Work in milliseconds per step is 12 + 2 × motion frames + 1 × pedal frames + 1 × hazard frames + 10 × diagnostic frames. Utilization is the work divided by the 100 ms budget, multiplied by 100 and capped at 100%. The toy model uses a single fictitious CPU and omits task scheduling and queues. Before the first completed interval, utilization has no reading.
+**Simulated ECU CPU utilization.** Work in milliseconds per step is 12 + 2 × motion frames + 1 × pedal frames + 1 × hazard frames + 10 × diagnostic frames. With sensor transport enabled, each supplementary sensor frame adds another 3 ms. Utilization is the work divided by the 100 ms budget, multiplied by 100 and capped at 100%. The toy model uses a single fictitious CPU and omits task scheduling and queues. Before the first completed interval, utilization has no reading.
 
 **Synthetic reference (unvalidated).** Scenario-specific keyframes define an independent curve through linear interpolation. The scripts for the inputs and reference have a shared origin. Comparison shows how the estimate and reference differ in timing and magnitude for the supplied scripts.
 
@@ -35,7 +35,7 @@ Classic CAN teaching map. IDs are 11-bit, payloads are fixed length, offsets sta
 | `0x122` | Hazard status | 200 ms | 1 | Byte 0 bit 0, where 1 means active. |
 | `0x7A0` | Synthetic diagnostics | 20 ms during burst | 8 | Byte 0 is a session counter modulo 256, starting at 0. |
 
-`src/sim/can.js` is the shared code definition. The encoder rounds to nearest with JavaScript's ties-toward-positive-infinity rule and clamps to the field range. The decoder rejects unknown IDs and DLC or payload lengths that disagree with the definition. Absolute cadence begins at each period after 0 ms. The diagnostic interval covers the five seconds following its 12.0 s marker and generates five frames per step at offsets 20, 40, 60, 80 and 100 ms. Ties sort by ascending numerical ID. The inspector displays newest frames first and keeps at most 100 frames before filtering. At time `t`, activity counts frames in `(max(0,t−1000),t]` and divides by `min(t,1000)/1000` seconds. At 0 ms the rate is displayed as zero. This is a frame rate with no physical bus occupancy or arbitration model.
+`src/sim/can.js` is the shared code definition. The encoder rounds to nearest with JavaScript's ties-toward-positive-infinity rule and clamps to the field range. The decoder rejects unknown IDs and DLC or payload lengths that disagree with the definition. Absolute cadence begins at each period after 0 ms. The diagnostic interval covers the five seconds following its 12.0 s marker and generates five frames per step at offsets 20, 40, 60, 80 and 100 ms. Ties sort by ascending numerical ID. The inspector displays newest frames first and keeps at most 100 frames before filtering. At time `t`, activity counts frames in `(max(0,t−1000),t]` and divides by `min(t,1000)/1000` seconds. At 0 ms the rate is displayed as zero. The UI also enables the sensor messages defined in the [sensor contract](sensors.md), which describes measured values, delivery timing and processing costs. This is a frame rate with no physical bus occupancy or arbitration model.
 
 ## Telemetry CSV
 

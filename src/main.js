@@ -1,7 +1,8 @@
 import './style.css';
 import './extension.css';
+import './sensors.css';
 import { createVehicleView } from './scene/scene.js';
-import { CAN, decodeFrame, hexId, hexPayload } from './sim/can.js';
+import { ALL_CAN, decodeFrame, hexId, hexPayload } from './sim/can.js';
 import { createClock } from './sim/clock.js';
 import { telemetryCsv } from './sim/csv.js';
 import { scenarios } from './sim/scenarios.js';
@@ -11,12 +12,13 @@ import { driverCue, trafficAt } from './sim/traffic.js';
 import { cityContext, cityDriverCue } from './sim/city.js';
 import { downloadCsv } from './ui/download.js';
 import { mountLab } from './ui/lab.js';
+import { mountSensors } from './ui/sensors.js';
 
 const metrics = [
   { id: 'demand', name: 'Driver demand estimate', unit: '/ 100', tag: 'HEURISTIC', accent: 'mint', field: 'driver_demand_index', max: 100 },
   { id: 'reference', name: 'Synthetic reference (unvalidated)', unit: '/ 100', tag: 'SCRIPTED', accent: 'muted', field: 'synthetic_reference_index', max: 100 },
   { id: 'ecu', name: 'Simulated ECU CPU utilization', unit: '%', tag: 'BUDGET MODEL', accent: 'violet', field: 'ecu_cpu_sim_pct', max: 100 },
-  { id: 'bus', name: 'CAN frame activity', unit: 'frames/s', tag: '1 S WINDOW', accent: 'cyan', field: 'can_frames_per_s', max: 80 },
+  { id: 'bus', name: 'CAN frame activity', unit: 'frames/s', tag: '1 S WINDOW', accent: 'cyan', field: 'can_frames_per_s', max: 160 },
 ];
 
 const app = document.querySelector('#app');
@@ -74,6 +76,7 @@ app.innerHTML = `
           </div>`).join('')}</div>
       </aside>
     </section>
+    <section class="panel sensor-panel" id="sensor-panel" aria-labelledby="sensors-title"></section>
     <section class="panel timeline" aria-labelledby="timeline-title">
       <header class="panel-head"><div><span class="eyebrow">SYNCHRONIZED HISTORY</span><h2 id="timeline-title">Scenario timeline</h2></div>
         <div class="legend"><span><i></i> Estimate</span><span><i class="dashed"></i> Scripted reference</span><span><i class="dotted"></i> Event start</span></div></header>
@@ -82,7 +85,7 @@ app.innerHTML = `
     </section>
     <section class="panel can-panel" aria-labelledby="can-title">
       <header class="panel-head"><div><span class="eyebrow">SYNTHETIC CLASSIC CAN</span><h2 id="can-title">Frame inspector</h2></div>
-        <label class="select-label">Filter by CAN ID<select id="filter"><option value="">All IDs</option>${CAN.map(m => '<option value="' + m.id + '">' + hexId(m.id) + ' · ' + m.name + '</option>').join('')}</select></label></header>
+        <label class="select-label">Filter by CAN ID<select id="filter"><option value="">All IDs</option>${ALL_CAN.map(m => '<option value="' + m.id + '">' + hexId(m.id) + ' · ' + m.name + '</option>').join('')}</select></label></header>
       <p id="frame-count" class="subtle"></p>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Recent CAN frames">
         <table><thead><tr><th scope="col">Time (ms)</th><th scope="col">ID</th><th scope="col">DLC</th><th scope="col">Payload (hex)</th><th scope="col">Decoded signals</th></tr></thead><tbody id="frames"></tbody></table>
@@ -94,7 +97,7 @@ app.innerHTML = `
       <div class="method-grid">
         <article><h3>01 / Driver demand estimate</h3><p>The 0–100 heuristic combines brake (30%), absolute jerk (20%), steering rate (15%), acceleration (10%) and hazard state (25%). Each step blends 30% of the new score with 70% of the previous score.</p></article>
         <article><h3>02 / Scripted reference</h3><p>Independent keyframes define this unvalidated 0–100 curve. The signals and reference share a scenario script. The comparison illustrates timing and shape.</p></article>
-        <article><h3>03 / Simulated ECU CPU</h3><p>A 100 ms budget starts with 12 ms of baseline work. Each motion, pedal, hazard and diagnostic frame adds 2, 1, 1 and 10 ms respectively. CAN activity counts frames over simulated time and omits physical bus occupancy.</p></article>
+        <article><h3>03 / Simulated ECU CPU</h3><p>A 100 ms budget starts with 12 ms of baseline work. Each motion, pedal, hazard and diagnostic frame adds 2, 1, 1 and 10 ms respectively. Each supplementary sensor frame adds 3 ms. CAN activity counts frames over simulated time and omits physical bus occupancy.</p></article>
       </div>
     </section>
   </main>
@@ -117,13 +120,14 @@ const plots = chartGroups.flatMap(group => {
 const vehicle = createVehicleView(el('vehicle'), el('cabin-frame'), (label, state) => {
   el('model-status').textContent = label;
   el('model-status').dataset.state = state;
-});
+}, id => sensorPanel.select(id));
 const metricNodes = metrics.map(metric => ({ ...metric, value: el(metric.id), bar: el(metric.id + '-bar') }));
 let session;
 let previous;
 let lastTick;
 let dirty = true;
 const lab = mountLab(el('classifier-lab'), () => session);
+const sensorPanel = mountSensors(el('sensor-panel'), () => session, () => reset());
 const clock = createClock(() => {
   previous = session.current;
   session.step();
@@ -154,7 +158,7 @@ function renderFrames() {
     const fields = decodeFrame(frame).map(field => field.label + ' ' +
       (field.key === 'hazard_active' ? (field.value ? 'active' : 'clear') : field.value + (field.unit ? ' ' + field.unit : '')));
     return '<tr><td>' + frame.timeMs + '</td><td class="frame-id">' + hexId(frame.id) + '</td><td>' + frame.dlc +
-      '</td><td class="payload">' + hexPayload(frame.data) + '</td><td>' + fields.join(' · ') + '</td></tr>';
+      '</td><td class="payload">' + hexPayload(frame.data) + '</td><td>' + fields.join(' · ') + (frame.sourceTimeMs !== undefined ? ' · sampled ' + frame.sourceTimeMs + ' ms' : '') + '</td></tr>';
   }).join('') : '<tr><td colspan="5">No matching frames in this session window.</td></tr>';
 }
 
@@ -189,6 +193,7 @@ function drawTelemetry() {
       ' m ' + (nearest.gapM < 0 ? 'behind' : 'ahead') : 'No traffic actor in view');
   }
   lab.update();
+  sensorPanel.update();
   for (const metric of metricNodes) {
     const value = current[metric.field];
     text(metric.value, value === null ? '—' : value.toFixed(metric.id === 'ecu' ? 0 : 1));
@@ -202,7 +207,7 @@ function drawTelemetry() {
 function reset() {
   clock.reset();
   const scenario = scenarios.find(item => item.id === el('scenario').value);
-  session = createSession(scenario);
+  session = createSession(scenario, { sensorConfig: sensorPanel.config() });
   const fallback = scenario.junctions ? 'static-city.svg' : 'static-vehicle.svg';
   const asset = import.meta.env.BASE_URL + 'models/' + fallback;
   if (el('scene-fallback').getAttribute('src') !== asset) el('scene-fallback').src = asset;
@@ -227,7 +232,9 @@ el('pause').addEventListener('click', () => { clock.pause(); controls(); });
 el('filter').addEventListener('change', renderFrames);
 document.addEventListener('visibilitychange', () => { lastTick = undefined; });
 el('export').addEventListener('click', () => {
-  downloadCsv(telemetryCsv(session.samples), session.scenario.id + '_seed-' + session.initial.seed + '_telemetry.csv');
+  const fault = session.sensorConfig;
+  const suffix = fault.mode === 'healthy' ? '' : '_' + fault.target + '-' + fault.mode;
+  downloadCsv(telemetryCsv(session.samples), session.scenario.id + '_seed-' + session.initial.seed + suffix + '_telemetry.csv');
 });
 
 function tick(now) {
@@ -237,7 +244,7 @@ function tick(now) {
     drawTelemetry();
     dirty = false;
   }
-  vehicle.draw(previous, session.current, session.complete ? 1 : clock.alpha, session.scenario);
+  vehicle.draw(previous, session.current, session.complete ? 1 : clock.alpha, session.scenario, sensorPanel.view());
   requestAnimationFrame(tick);
 }
 

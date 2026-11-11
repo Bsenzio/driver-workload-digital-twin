@@ -1,0 +1,37 @@
+.sensor-panel { margin-top: 12px; }
+.sensor-toggle { display: inline-flex; align-items: center; gap: 5px; color: var(--soft); font-size: 0.74rem; }
+.sensor-controls { display: flex; gap: 9px; flex-wrap: wrap; align-items: flex-end; padding: 0 14px; }
+.sensor-panel > .lab-status { margin: 10px 14px; color: var(--cyan); font-size: 0.75rem; }
+.sensor-grid { display: grid; grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.4fr); gap: 12px; padding: 0 12px 12px; }
+.sensor-visual, .sensor-detail, .sensor-health { border: 1px solid var(--line); border-radius: 7px; padding: 11px; background: #131b23; min-width: 0; }
+.sensor-visual { display: grid; grid-template-columns: 0.8fr 1fr; align-items: center; gap: 5px; }
+.sensor-map { position: relative; width: 100%; aspect-ratio: 180 / 260; }
+.sensor-map svg { width: 100%; height: 100%; display: block; }
+.sensor-hotspot { position: absolute; transform: translate(-50%, -50%); min-height: 30px; padding: 4px 5px; background: #142b38; color: var(--cyan); border: 1px solid #588495; font: 700 0.57rem var(--mono); }
+.sensor-hotspot[aria-pressed="true"] { color: #10291e; background: var(--mint); border-color: var(--mint); }
+.sensor-fov h3 { margin: 0; font-size: 0.75rem; }
+.sensor-fov svg { width: 100%; display: block; }
+.sensor-fov text, #sensor-trace text { font: 10px var(--mono); fill: var(--soft); }
+.sensor-fov p, #sensor-info { color: var(--soft); font-size: 0.72rem; line-height: 1.45; margin: 5px 0; }
+.sensor-heading { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.sensor-heading h3 { font-size: 0.93rem; margin: 0; }
+#sensor-quality { color: var(--mint); font: 0.73rem var(--mono); }
+#sensor-quality[data-stale="true"] { color: var(--amber); }
+.sensor-table-scroll { overflow-x: auto; margin: 10px 0; }
+.sensor-table-scroll table { min-width: 390px; }
+.sensor-table-scroll th, .sensor-table-scroll td { padding: 7px; font-size: 0.72rem; }
+.sensor-legend { display: flex; gap: 8px; flex-wrap: wrap; color: var(--soft); font-size: 0.66rem; }
+#sensor-trace { width: 100%; display: block; margin: 8px 0; }
+.sensor-detail .lab-note { margin: 0; font-size: 0.71rem; }
+.sensor-health { margin: 0 12px 12px; }
+.sensor-health > p { color: var(--soft); font-size: 0.77rem; max-width: 100ch; line-height: 1.5; }
+@media(max-width: 850px) {
+  .sensor-grid { grid-template-columns: minmax(0, 1fr); }
+  .sensor-visual { grid-template-columns: minmax(110px, 0.7fr) minmax(150px, 1fr); max-height: 310px; overflow: hidden; }
+  .sensor-map, .sensor-fov { max-height: 285px; }
+}
+@media(max-width: 430px) {
+  .sensor-controls .select-label { width: 100%; }
+  .sensor-controls select { width: 100%; }
+  .sensor-hotspot { font-size: 0.51rem; }
+}
